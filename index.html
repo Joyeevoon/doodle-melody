@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#FFF3CF">
+<title>画音 Doodle Melody · 画出你的音乐</title>
+<meta name="description" content="一张会唱歌的画布：自由画画，笔触变成音乐；16 种曲风、10 种笔刷，上传图片自动提取线稿并演奏。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="brand">
+      <span class="logo">♪</span>
+      <div class="brand-t"><b>画音</b><small>Doodle Melody</small></div>
+    </div>
+    <button id="genreChip" class="chip" aria-label="选择曲风"><span id="chipEmo">🎤</span><span id="chipName">纯净 无风格</span><span class="chip-mood" id="chipMood">🌞 愉悦欢快</span><span class="caret">▾</span></button>
+    <div class="top-r">
+      <span class="bpm-pill desk-only" id="bpmPill">108 BPM</span>
+      <button id="helpBtn" class="icon-btn" data-tip="玩法引导" aria-label="玩法引导"></button>
+    </div>
+  </header>
+
+  <aside id="brushPanel" class="panel sheet left-col">
+    <div class="sheet-head"><b>画笔与颜色</b><button class="sheet-x icon-btn" aria-label="关闭"></button></div>
+    <div class="scroll">
+      <div class="sec-title">笔刷 <em>决定演奏方式</em></div>
+      <div id="brushGrid" class="brush-grid"></div>
+      <div class="brush-desc" id="brushDesc"></div>
+      <div class="slider-row"><span>粗细</span><input id="size" type="range" min="2" max="60" value="10"><i class="size-dot" id="sizeDot"></i></div>
+      <div class="slider-row"><span>透明</span><input id="opacity" type="range" min="15" max="100" value="100"><b id="opVal">100%</b></div>
+      <div class="sec-title desk-only">颜色 <em>决定乐器</em></div>
+      <div id="swatchGrid" class="swatch-grid desk-only"></div>
+      <div class="role-card" id="roleCard"></div>
+    </div>
+  </aside>
+
+  <main class="stage" id="stage">
+    <div class="paper" id="paper">
+      <canvas id="cBg"></canvas>
+      <canvas id="cArt"></canvas>
+      <canvas id="cLive"></canvas>
+      <canvas id="cFx"></canvas>
+      <div class="paper-hint" id="hint"><span>✏️ 在这里画画</span><small>从左到右是时间 · 越高音越高</small></div>
+      <div class="busy" id="busy"><div class="spinner"></div><span id="busyText">处理中…</span></div>
+    </div>
+    <div class="transport desk-only">
+      <div class="t-group">
+        <button class="tool-btn" data-act="undo" data-tip="撤销"></button>
+        <button class="tool-btn" data-act="redo" data-tip="重做"></button>
+        <button class="tool-btn" data-act="clear" data-tip="清空画布"></button>
+      </div>
+      <button class="play-btn" data-act="play" aria-label="播放"></button>
+      <div class="t-group">
+        <button class="tool-btn" data-act="upload" data-tip="上传图片生成线稿" id="uploadDesk"></button>
+        <button class="tool-btn toggle" data-act="nodes" data-tip="显示节点与音高网格"></button>
+        <button class="tool-btn" data-act="save" data-tip="保存图片"></button>
+      </div>
+    </div>
+  </main>
+
+  <aside class="right-col">
+    <section id="genrePanel" class="panel sheet">
+      <div class="sheet-head"><b>曲风与情绪</b><button class="sheet-x icon-btn" aria-label="关闭"></button></div>
+      <div class="sec-title">情绪 <em>每种曲风都能换</em></div>
+      <div id="moodRow" class="mood-row"></div>
+      <div class="sec-title">曲风 <em>同一幅画，不同的歌</em></div>
+      <div class="scroll"><div id="genreGrid" class="genre-grid"></div></div>
+    </section>
+    <section id="setPanel" class="panel sheet">
+      <div class="sheet-head"><b>播放设置</b><button class="sheet-x icon-btn" aria-label="关闭"></button></div>
+      <div class="scroll">
+        <div class="slider-row"><span>速度</span><input id="bpm" type="range" min="60" max="180" value="108"><b id="bpmVal">108</b></div>
+        <div class="slider-row"><span>音量</span><input id="vol" type="range" min="0" max="100" value="80"><b id="volVal">80</b></div>
+        <label class="switch-row"><span>🥁 伴奏鼓点与和弦</span><input type="checkbox" id="optBacking" checked><i></i></label>
+        <label class="switch-row"><span>✏️ 边画边响</span><input type="checkbox" id="optLive" checked><i></i></label>
+        <label class="switch-row"><span>🌊 回声</span><input type="checkbox" id="optEcho" checked><i></i></label>
+        <div class="mob-only act-row">
+          <button class="pill-btn" data-act="redo">重做</button>
+          <button class="pill-btn" data-act="nodes">节点</button>
+          <button class="pill-btn" data-act="save">保存</button>
+          <button class="pill-btn warn" data-act="clear">清空</button>
+        </div>
+      </div>
+    </section>
+  </aside>
+
+  <nav class="dock mob-only">
+    <div class="strip" id="swatchStrip"></div>
+    <div class="dock-row">
+      <button class="dock-btn" id="mBrush" aria-label="画笔"><span class="db-ic" id="mBrushIc"></span><small id="mBrushName">钢笔</small></button>
+      <button class="dock-btn" data-act="undo" aria-label="撤销"><span class="db-ic"></span><small>撤销</small></button>
+      <button class="play-btn" data-act="play" aria-label="播放"></button>
+      <button class="dock-btn" data-act="upload" id="uploadMob" aria-label="上传图片"><span class="db-ic"></span><small>线稿</small></button>
+      <button class="dock-btn" id="mSet" aria-label="设置"><span class="db-ic"></span><small>设置</small></button>
+    </div>
+  </nav>
+</div>
+
+<div id="scrim"></div>
+<div id="spotlight"></div>
+
+<div id="pet" class="pet">
+  <div class="pet-bubble">
+    <span class="pet-step"></span>
+    <p class="pet-text"></p>
+    <div class="pet-actions"></div>
+  </div>
+  <div class="pet-body">
+    <img class="pet-img" src="assets/pet.webp" alt="霜糖" draggable="false">
+    <i class="pet-shadow"></i>
+  </div>
+</div>
+
+<div id="importModal" class="modal">
+  <div class="modal-card">
+    <div class="sheet-head"><b>图片 → 线稿</b><button class="sheet-x icon-btn" id="importX" aria-label="关闭"></button></div>
+    <div class="import-prev"><canvas id="importPrev"></canvas><div class="busy" id="importBusy"><div class="spinner"></div><span id="importBusyText">提取线稿中…</span></div></div>
+    <div class="import-how" id="importHow"></div>
+    <label class="switch-row"><span>只保留人物</span><input type="checkbox" id="impPerson" checked><i></i></label>
+    <label class="switch-row"><span>彩色线条</span><input type="checkbox" id="impColor" checked><i></i></label>
+    <label class="switch-row"><span>淡淡底色</span><input type="checkbox" id="impUnder"><i></i></label>
+    <div class="slider-row"><span>细节</span><input id="impDetail" type="range" min="0" max="100" value="50"><b id="impDetailVal">中</b></div>
+    <div class="modal-actions">
+      <button class="pill-btn" id="importAgain">换一张</button>
+      <button class="pill-btn primary" id="importOk">放到画布并演奏</button>
+    </div>
+  </div>
+</div>
+
+<div id="colorModal" class="modal">
+  <div class="modal-card cp-card">
+    <div class="sheet-head"><b>自定义颜色</b><button class="sheet-x icon-btn" id="cpX" aria-label="关闭"></button></div>
+    <div class="cp-sv" id="cpSv"><i class="cp-thumb" id="cpThumb"></i></div>
+    <input type="range" id="cpHue" class="cp-hue" min="0" max="360" value="330" aria-label="色相">
+    <div class="cp-row">
+      <span class="cp-prev" id="cpPrev"></span>
+      <label class="cp-hex"><span>#</span><input id="cpHex" maxlength="7" spellcheck="false" autocomplete="off" inputmode="text"></label>
+    </div>
+    <div class="cp-role" id="cpRole"></div>
+    <div class="cp-recent-t" id="cpRecentT">最近用过</div>
+    <div class="cp-recent" id="cpRecent"></div>
+    <div class="modal-actions">
+      <button class="pill-btn" id="cpCancel">取消</button>
+      <button class="pill-btn primary" id="cpOk">用这个颜色</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<input type="file" id="file" accept="image/*" class="vh">
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
